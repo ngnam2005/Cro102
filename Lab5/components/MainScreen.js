@@ -1,31 +1,23 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import ImagePickerComponent from '../components/ImagePicker';
+import { View, Text, StyleSheet } from 'react-native';
 import UserList from './userList';
+import ImagePickerComponent from './ImagePicker';
 
 const MainScreen = () => {
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.header}>📸 Chọn hoặc chụp ảnh</Text>
-
-            {/* Card chứa Image Picker */}
-            <View style={styles.card}>
-                <ImagePickerComponent />
-            </View>
-
+        <View style={styles.container}>
             <Text style={styles.header}>📋 Danh sách người dùng</Text>
-
-            {/* Card chứa danh sách người dùng */}
             <View style={styles.card}>
                 <UserList />
             </View>
-        </ScrollView>
+            <ImagePickerComponent/>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         padding: 20,
         backgroundColor: '#f7f7f7',
         alignItems: 'center',
@@ -37,6 +29,7 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     card: {
+        flex: 1, // Đảm bảo UserList có thể cuộn
         width: '100%',
         backgroundColor: 'white',
         padding: 15,
@@ -46,7 +39,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 5,
-        marginBottom: 20,
     },
 });
 

@@ -1,7 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { View, Text, FlatList, ActivityIndicator, Button, TextInput, StyleSheet } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { getUsers, addUser } from '../redux/slices/userSlice';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+
+const AnimatedUserItem = memo(({ item, isVisible }) => {
+    const opacity = useSharedValue(isVisible ? 1 : 0);
+    const scale = useSharedValue(isVisible ? 1 : 0.8);
+
+    useEffect(() => {
+        opacity.value = withTiming(isVisible ? 1 : 0, { duration: 400 });
+        scale.value = withTiming(isVisible ? 1 : 0.95, { duration: 400 });
+    }, [isVisible, opacity, scale]); 
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        opacity: opacity.value,
+        transform: [{ scale: scale.value }],
+    }));
+
+    return (
+        <Animated.View style={[styles.userItem, animatedStyle]}>
+            <Text style={styles.userName}>{item.name}</Text>
+            <Text>Email: {item.email}</Text>
+            <Text>Phone: {item.phone}</Text>
+        </Animated.View>
+    );
+});
 
 const UserList = () => {
     const dispatch = useDispatch();
@@ -10,6 +34,7 @@ const UserList = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [visibleItems, setVisibleItems] = useState(new Set());
 
     useEffect(() => {
         dispatch(getUsers());
@@ -24,9 +49,13 @@ const UserList = () => {
         }
     };
 
+    const onViewableItemsChanged = useCallback(({ viewableItems }) => {
+        setVisibleItems(new Set(viewableItems.map(({ item }) => item.id)));
+    }, []);
+
     return (
         <View style={styles.container}>
-            <View style={styles.inputContainer}>
+            {/* <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
                     placeholder="Tên user"
@@ -48,23 +77,23 @@ const UserList = () => {
                     keyboardType="phone-pad"
                 />
                 <Button title="Thêm User" onPress={handleAddUser} />
-            </View>
-
+            </View> */}
             <Button title="Tải lại danh sách" onPress={() => dispatch(getUsers())} />
 
             {loading && <ActivityIndicator size="large" color="blue" />}
             {error && <Text style={{ color: 'red' }}>{error}</Text>}
 
             <FlatList
+                style={{ flex: 1 }} 
+                contentContainerStyle={{ paddingBottom: 20 }}
                 data={users}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <View style={styles.userItem}>
-                        <Text style={styles.userName}>👤 {item.name}</Text>
-                        <Text>Email: {item.email}</Text>
-                        <Text>Phone: {item.phone}</Text>
-                    </View>
+                    <AnimatedUserItem item={item} isVisible={visibleItems.has(item.id)} />
                 )}
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+                extraData={visibleItems}  
             />
         </View>
     );
@@ -72,6 +101,7 @@ const UserList = () => {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         padding: 15,
         backgroundColor: 'white',
         borderRadius: 10,
@@ -80,12 +110,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 5,
-        marginBottom: 20,
-    },
-    header: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
     },
     inputContainer: {
         marginBottom: 15,
